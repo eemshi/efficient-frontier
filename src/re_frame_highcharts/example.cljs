@@ -3,18 +3,17 @@
             [reagent.dom]
             [re-frame.core :as rf]
             [data :as data]
-            [re-frame-highcharts.stats :as stats]
-            [kixi.stats.core :as kstats]))
+            [re-frame-highcharts.stats :as stats]))
 
 ;; data helpers
 
 (defn historical-data-with-daily-returns [data]
   (let [sorted-data (reverse (sort-by :date data))]
     (map-indexed (fn [i item]
-                   (if (not= i (- (count sorted-data) 1))
+                   (if (< i (- (count sorted-data) 1))
                      (let [previous-day-item (nth sorted-data (+ i 1))
                            daily-return (- (/ (:close item) (:close previous-day-item)) 1)]
-                       (assoc item :daily-return (* 100 daily-return)))
+                       (assoc item :daily-return daily-return))
                      item))
                  sorted-data)))
 
@@ -23,7 +22,7 @@
 
 (defn ticker-stats [data]
   (let [returns (daily-returns (historical-data-with-daily-returns data))
-        mean (kstats/mean returns)
+        mean (/ (apply + returns) (count returns))
         std-dev (stats/standard-deviation returns)]
     {:returns returns
      :mean mean
@@ -31,8 +30,8 @@
 
 ;; portfolio
 
-(def spy-stats (ticker-stats data/spy))
-(def vxus-stats (ticker-stats data/vxus))
+(def spy-stats (ticker-stats data/spy1))
+(def vxus-stats (ticker-stats data/vxus1))
 
 (def portfolio-weights 
   [{:spy 100 :vxus 0}
@@ -47,18 +46,29 @@
    {:spy 10 :vxus 90}
    {:spy 0 :vxus 100}])
 
+(defn w-return [weight-x weight-y mean-x mean-y]
+  (+ (* weight-x mean-x)
+     (* weight-y mean-y)))
+
+(defn w-std-dev [weight-x weight-y stats-x stats-y]
+  (.sqrt js/Math
+         (+ (* weight-x weight-x (:std-dev stats-x) (:std-dev stats-x))
+            (* weight-y weight-y (:std-dev stats-y) (:std-dev stats-y))
+            (* 2 weight-x weight-y (stats/covariance (:returns stats-x) (:returns stats-y))))))
+
 (def portfolio-returns
-  (map (fn [weight] 
-         (+ (* (:spy weight) (:mean spy-stats))
-            (* (:vxus weight) (:mean vxus-stats)))) 
+  (map #(w-return (:spy %) (:vxus %) (:mean spy-stats) (:mean vxus-stats))
        portfolio-weights))
 
-(def portfolio-std-dev
-  (map (fn [weight]
-         (.sqrt js/Math 
-                (+ (* (:spy weight) (:spy weight) (:std-dev spy-stats) (:std-dev spy-stats))
-                   (* (:vxus weight) (:vxus weight) (:std-dev vxus-stats) (:std-dev vxus-stats))
-                   (* 2 (:spy weight) (:vxus weight) (stats/covariance (:returns spy-stats) (:returns vxus-stats))))))
+(def portfolio-std-devs
+  (map #(w-std-dev (:spy %) (:vxus %) spy-stats vxus-stats)
+       portfolio-weights))
+
+(def portfolio-sharpe-ratios
+  (map (fn [w]
+         (-> (w-return (:spy w) (:vxus w) (:mean spy-stats) (:mean vxus-stats))
+             (- stats/risk-free-rate)
+             (/ (w-std-dev (:spy w) (:vxus w) spy-stats vxus-stats))))
        portfolio-weights))
 
 ;; -- Entry Point -------------------------------------------------------------
@@ -73,12 +83,16 @@
   (reagent.dom/render
    [:div
     [:h1 "SPY"]
-    [:p (str "Mean " (:mean spy-stats))]
-    [:p (str "St Dev " (:std-dev spy-stats))]
+    [:h3 (str "Mean: " (:mean spy-stats))]
+    [:h3 (str "St Dev: " (:std-dev spy-stats))]
     [:h1 "VXUS"]
-    [:p (str "Mean " (:mean vxus-stats))]
-    [:p (str "St Dev " (:std-dev vxus-stats))]
-    [:h2 (str "Covariance " (stats/covariance (:returns spy-stats) (:returns vxus-stats)))]
-    [:h2 (str "Risk Free Rate " stats/risk-free-rate)]]
+    [:h3 (str "Mean: " (:mean vxus-stats))]
+    [:h3 (str "St Dev: " (:std-dev vxus-stats))]
+    [:h1 (str "Covariance: " (stats/covariance (:returns spy-stats) (:returns vxus-stats)))]
+    [:h1 (str "Risk Free Rate: " stats/risk-free-rate)]
+    [:h1 "Portfolio"]
+    [:h3 "Returns: " (str portfolio-returns)]
+    [:h3 "Std Devs: " (str portfolio-std-devs)]
+    [:h3 "Sharpe Ratio: " (str portfolio-sharpe-ratios)]]
    (js/document.getElementById "app")))
    
