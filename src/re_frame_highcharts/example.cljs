@@ -2,131 +2,52 @@
   (:require [reagent.core :as reagent]
             [reagent.dom]
             [re-frame.core :as rf]
+            [data :as data]
+            [kixi.stats.core :as stats]
             [re-frame-highcharts.utils :as chart-utils]
-            [re-frame-highcharts.example-data :as example-data]))
+            [cljs.pprint :as pprint]))
 
-(def line-config
-  {:chart {:type "line"}
-   :plotOptions {:line {:animation false}}
-   :legend {:layout "vertical"
-            :align "right"
-            :verticalAlign "top"
-            :floating true
-            :borderWidth 1
-            :shadow true}
-   :credits {:enabled false}
-   :series [{:id "series-1"
-             :name "Secords"
-             :data []}]})
+;; helpers
 
-(def pie-config
-  {:chart {:type "pie"}
-   :plotOptions {:pie {:animation false}}
-   :title {:text "A pie chart"}
-   :series [{:id "series-1"
-             :name "Test"
-             :innerSize "80%"
-             :data [{:name "Test 1"
-                     :y 100}
-                    {:name "Test 2"
-                     :y 50}
-                    {:name "Test 3"
-                     :y 25}]}]})
+(defn sort-by-date [data]
+  (reverse (sort-by :date data)))
 
-(def stock-config
-  {:rangeSelector {:selected 1}
-   :title {:text "AAPL Stock Price"}
-   :series [{:name "AAPL"
-             :data example-data/stock-data
-             :tooltip {:valueDecimals 2}}]})
+(defn round-decimal [number decimal-places] 
+  (pprint/cl-format nil (str "~," decimal-places "f") number))
 
-;; -- Domino 1 - Event Dispatch -----------------------------------------------
+;; shape data
 
-(defn dispatch-timer-event
-  []
-  (let [s (.getSeconds (js/Date.))]
-    (rf/dispatch [:timer s])))
+(defn data-with-daily-returns [data]
+  (let [sorted-data (sort-by-date data)]
+    (map-indexed (fn [i item]
+                   (if (not= i (- (count sorted-data) 1))
+                     (let [previous-day-item (nth sorted-data (+ i 1))
+                           daily-return (- (/ (:close item) (:close previous-day-item)) 1)]
+                       (assoc item :daily-return (* 100 daily-return)))
+                     item))
+                 sorted-data)))
 
-(defonce do-timer (js/setInterval dispatch-timer-event 1000))
+(defn daily-returns [data]
+  (remove nil? (map :daily-return data)))
 
-;; -- Domino 2 - Event Handlers -----------------------------------------------
+;; statistics
 
-(rf/reg-event-db
-  :initialize
-  (fn [_ _]
-    {:chart-1 {:chart-meta {:id :chart-1
-                            :style {:height "100%"
-                                    :width "100%"}}
-               :chart-data (assoc-in line-config [:title :text] "Last 120 seconds")}
-     :chart-2 {:chart-meta {:id :chart-2
-                            :style {:height "100%"
-                                    :width "100%"}}
-               :chart-data (assoc-in line-config [:title :text] "Last 60 seconds")}
-     ; If you add a :redo true to the chart meta map, the
-     ; chart will get recreated instead of updated.
-     ; This is useful when you want to add or remove
-     ; series or do other changes other than updating
-     ; existing series.
-     :chart-3 {:chart-meta {:id :chart-3
-                            :redo true}
-               :chart-data pie-config}
+(defn standard-deviation [list]
+  (let [mean (round-decimal (stats/mean list) 2)
+        list-value-minus-mean-squared (map #(* (- % mean) (- % mean)) list)
+        sum (apply + list-value-minus-mean-squared)
+        variance (/ sum (count list))]
+    (.sqrt js/Math variance)))
 
-     ; Used when viewing Highstock chart
-     :stock-1 {:chart-meta {:id :stock-1}
-               :chart-data stock-config}}))
+(defn covariance [list-x list-y]
+  (let [mean-x (round-decimal (stats/mean list-x) 2)
+        mean-y (round-decimal (stats/mean list-y) 2)]
+    (/ (->> (map (fn [x y] (* (- x mean-x) (- y mean-y))) list-x list-y)
+            (apply +))
+       (count list-x))))
 
-(rf/reg-event-db
-  :timer
-  (fn [db [_ s]]
-    (let [db (update-in db [:chart-1 :chart-data :series 0 :data] #(into [] (take-last 120 (conj % s))))
-          db (update-in db [:chart-2 :chart-data :series 0 :data] #(into [] (take-last 60 (conj % s))))]
-      db)))
+(def risk-free-rate (/ .02 252))
 
-;; -- Domino 4 - Query  -------------------------------------------------------
-
-(rf/reg-sub
-  :value
-  (fn [db [_ k]]
-    (k db)))
-
-
-;; -- Domino 5 - View Functions ----------------------------------------------
-
-(defn chart-1
-  []
-  (let [data (rf/subscribe [:value :chart-1])]
-    (fn []
-      [chart-utils/chart @data])))
-
-(defn chart-2
-  []
-  (let [data (rf/subscribe [:value :chart-2])]
-    (fn []
-      [chart-utils/chart @data])))
-
-(defn chart-3
-  []
-  (let [data (rf/subscribe [:value :chart-3])]
-    (fn []
-      [chart-utils/chart @data])))
-
-(defn stock-1
-  []
-  (let [data (rf/subscribe [:value :stock-1])]
-    (fn []
-      [chart-utils/stock @data])))
-
-(defn charts-ui
-  []
-  [:div
-   [:div [chart-1]]
-   [:div [chart-2]]
-   [:div [chart-3]]])
-
-(defn stock-ui
-  []
-  [:div
-   [:div [stock-1]]])
 
 ;; -- Entry Point -------------------------------------------------------------
 
@@ -136,8 +57,17 @@
 ;; (swap! app-state update-in [:__figwheel_counter] inc)
 
 (defn ^:export run
-  [type]
-  (rf/dispatch-sync [:initialize])
-  (case type
-    "charts" (reagent.dom/render [charts-ui] (js/document.getElementById "app"))
-    "stock"  (reagent.dom/render [stock-ui]  (js/document.getElementById "app"))))
+  []
+  (reagent.dom/render
+   (let [spy-returns (daily-returns (data-with-daily-returns data/spy))
+         vxus-returns (daily-returns (data-with-daily-returns data/vxus))]
+     [:div
+      [:h1 "SPY"]
+      [:p (str "Mean " (stats/mean spy-returns))]
+      [:p (str "St Dev " (standard-deviation spy-returns))]
+      [:h1 "VXUS"]
+      [:p (str "Mean " (stats/mean vxus-returns))]
+      [:p (str "St Dev " (standard-deviation vxus-returns))]
+      [:h2 (str "Covariance " (covariance spy-returns vxus-returns))]
+      [:h2 (str "Risk Free Rate " risk-free-rate)]])
+   (js/document.getElementById "app")))
