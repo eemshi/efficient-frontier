@@ -1,11 +1,11 @@
 (ns mpt-charts.stats)
 
-(def risk-free-rate (/ .02 252))
+(def risk-free-rate 0) ;; omitted
 
 (defn average [nums]
   (/ (apply + nums) (count nums)))
 
-(defn standard-deviation [list]
+(defn standard-deviation-p [list]
   (let [mean (average list)
         list-value-minus-mean-squared (map #(* (- % mean) (- % mean)) list)
         sum (apply + list-value-minus-mean-squared)

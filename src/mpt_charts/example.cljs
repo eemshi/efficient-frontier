@@ -2,15 +2,16 @@
   (:require [reagent.core :as reagent]
             [reagent.dom]
             [re-frame.core :as rf]
-            [cljs.pprint :as pprint]
             [data :as data]
             [mpt-charts.utils :as chart-utils]
             [mpt-charts.stats :as stats]))
 
 ;; math helpers
 
-(defn round-decimal [number decimal-places]
-  (pprint/cl-format nil (str "~," decimal-places "f") number))
+(defn round-decimal [num digits]
+  (let [decimal-divisor (.pow js/Math 10 digits)
+        m (.toPrecision (js/Number (* (.abs js/Math num) decimal-divisor)) 15)]
+    (* (/ (.round js/Math m) decimal-divisor) (.sign js/Math num))))
 
 (defn square [num]
   (.pow js/Math num 2))
@@ -32,12 +33,12 @@
                      (map :return)
                      (remove nil?))
         mean (/ (apply + returns) (count returns))
-        st-dev (stats/standard-deviation returns)]
+        st-dev (stats/standard-deviation-p returns)]
     {:returns returns
      :mean mean
      :st-dev st-dev}))
 
-;; portfolio weighting stats (hard-coded spy + vxus for now)
+;; portfolio weight stats (spy + vxus for now)
 
 (def spy-stats (ticker-stats data/spy))
 (def vxus-stats (ticker-stats data/vxus))
@@ -94,7 +95,7 @@
              :verticalAlign "top"
              :floating true}
    :credits {:enabled false}
-   :series  [{:id "series-1"
+   :series  [{:id "efficient-frontier"
               :name "Portfolio"
               :data efficient-frontier-series}]
    :title   {:text "Efficient Frontier"}})
@@ -141,9 +142,9 @@
            [:tr
             [:td td-style (:spy w)]
             [:td td-style (:vxus w)]
-            [:td td-style (round-decimal x 4)]
-            [:td td-style (round-decimal y 4)]
-            [:td td-style (round-decimal z 4)]])
+            [:td td-style (round-decimal x 5)]
+            [:td td-style (round-decimal y 5)]
+            [:td td-style (round-decimal z 5)]])
          portfolio-weights
          weighted-returns
          weighted-st-devs
@@ -162,8 +163,8 @@
                ^{:key (:date x)}
                [:tr
                 [:td td-style (:date x)]
-                [:td td-style (round-decimal (:return x) 4)]
-                [:td td-style (round-decimal (:return y) 4)]])
+                [:td td-style (round-decimal (:return x) 5)]
+                [:td td-style (round-decimal (:return y) 5)]])
              (historical-data-with-returns data/spy)
              (historical-data-with-returns data/vxus))]]]
      [:div box-style
@@ -182,7 +183,7 @@
           [:td td-style (round-decimal (:mean (ticker-stats data/vxus)) 5)]]
          [:tr
           [:td [:strong "Standard Deviation"]]
-          [:td td-style (round-decimal (:mean (ticker-stats data/spy)) 5)]
+          [:td td-style (round-decimal (:st-dev (ticker-stats data/spy)) 5)]
           [:td td-style (round-decimal (:st-dev (ticker-stats data/vxus)) 5)]]]]]
       [:div {:style {:margin-top "3em"}}
        [:h3 (str "Covariance: " (round-decimal (stats/covariance (:returns spy-stats) (:returns vxus-stats)) 5))]
