@@ -64,8 +64,8 @@
 
 ;; portfolio weight stats (spy + vxus for now)
 
-(def spy-stats (ticker-stats data/spy1))
-(def vxus-stats (ticker-stats data/vxus1))
+(def spy-stats (ticker-stats data/spy))
+(def vxus-stats (ticker-stats data/vxus))
 
 (def portfolio-weights 
   [{:spy 1 :vxus 0}
@@ -111,23 +111,23 @@
   (map (fn [x y] {:x x :y y}) weighted-st-devs weighted-returns))
 
 ;; TODO: make function for getting CAL points
-(def cal-series [{:x (* 0 0.1082)
-                  :y (+ (* 0 0.37672) (* (- 1 0) risk-free-rate))}
-                 {:x (* 1 0.1082)
-                  :y (+ (* 1 0.37672) (* (- 1 1) risk-free-rate))}
-                 {:x (* 2 0.1082)
-                  :y (+ (* 2 0.37672) (* (- 1 2) risk-free-rate))}])
+(def cal-series [{:x (* 0 0.13521)
+                  :y (+ (* 0 0.15868) (* (- 1 0) risk-free-rate))}
+                 {:x (* 1 0.13521)
+                  :y (+ (* 1 0.15868) (* (- 1 1) risk-free-rate))}
+                 {:x (* 2 0.13521)
+                  :y (+ (* 2 0.15868) (* (- 1 2) risk-free-rate))}])
 
 ;; TODO: make function for getting axis min and max
 (def spline-config
   {:chart   {:type "spline"}
    :xAxis   {:title {:text "Standard Deviation"}
-             :min 0.1
+             :min 0.07
              :max 0.16
              }
    :yAxis   {:title {:text "Return"}
-             :min 0.33
-             :max 0.41
+             :min -0.02
+             :max 0.16
              }
    :legend  {:layout "vertical"
              :align "right"
@@ -208,8 +208,8 @@
                 [:td td-style (:date x)]
                 [:td td-style (round-decimal (:daily-return x) 5)]
                 [:td td-style (round-decimal (:daily-return y) 5)]])
-             (historical-data-with-daily-returns data/spy1)
-             (historical-data-with-daily-returns data/vxus1))]]]
+             (historical-data-with-daily-returns data/spy)
+             (historical-data-with-daily-returns data/vxus))]]]
      [:div box-style
       [:div
        [:h1 "1 Year Summary"]
@@ -222,20 +222,20 @@
         [:tbody
          [:tr
           [:td [:strong "Daily Mean"]]
-          [:td td-style (round-decimal (:daily-mean (ticker-stats data/spy1)) 5)]
-          [:td td-style (round-decimal (:daily-mean (ticker-stats data/vxus1)) 5)]]
+          [:td td-style (round-decimal (:daily-mean (ticker-stats data/spy)) 5)]
+          [:td td-style (round-decimal (:daily-mean (ticker-stats data/vxus)) 5)]]
          [:tr
           [:td [:strong "Daily St Dev"]]
-          [:td td-style (round-decimal (:daily-stdev (ticker-stats data/spy1)) 5)]
-          [:td td-style (round-decimal (:daily-stdev (ticker-stats data/vxus1)) 5)]]
+          [:td td-style (round-decimal (:daily-stdev (ticker-stats data/spy)) 5)]
+          [:td td-style (round-decimal (:daily-stdev (ticker-stats data/vxus)) 5)]]
          [:tr
           [:td [:strong "Annualized Return"]]
-          [:td td-style (round-decimal (:annual-return (ticker-stats data/spy1)) 5)]
-          [:td td-style (round-decimal (:annual-return (ticker-stats data/vxus1)) 5)]]
+          [:td td-style (round-decimal (:annual-return (ticker-stats data/spy)) 5)]
+          [:td td-style (round-decimal (:annual-return (ticker-stats data/vxus)) 5)]]
          [:tr
           [:td [:strong "Annualized St Dev"]]
-          [:td td-style (round-decimal (:annual-stdev (ticker-stats data/spy1)) 5)]
-          [:td td-style (round-decimal (:annual-stdev (ticker-stats data/vxus1)) 5)]]]]]
+          [:td td-style (round-decimal (:annual-stdev (ticker-stats data/spy)) 5)]
+          [:td td-style (round-decimal (:annual-stdev (ticker-stats data/vxus)) 5)]]]]]
       [:div {:style {:margin-top "3em"}}
        [:h3 (str "Covariance: " (round-decimal (covariance (:daily-returns spy-stats) (:daily-returns vxus-stats)) 5))]
        [:h3 (str "Risk Free Rate: " (round-decimal risk-free-rate 5))]]]]]
