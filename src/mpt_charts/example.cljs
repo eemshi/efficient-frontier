@@ -133,7 +133,7 @@
          [:th "VXUS"]
          [:th "Return"]
          [:th "St Dev"]
-         [:th "Sharp Ratio"]]]
+         [:th "Sharpe Ratio"]]]
        [:tbody
         (map
          (fn [w x y z]
