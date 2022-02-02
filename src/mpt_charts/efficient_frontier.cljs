@@ -1,4 +1,4 @@
-(ns mpt-charts.example
+(ns mpt-charts.efficient-frontier
   (:require [reagent.core :as reagent]
             [reagent.dom]
             [re-frame.core :as rf]

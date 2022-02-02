@@ -29,14 +29,14 @@
                 ;; The presence of a :figwheel configuration here
                 ;; will cause figwheel to inject the figwheel client
                 ;; into your build
-                :figwheel {:on-jsload "mpt-charts.example/on-js-reload"
+                :figwheel {:on-jsload "mpt-charts.efficient-frontier/on-js-reload"
                            ;; :open-urls will pop open your application
                            ;; in the default browser once Figwheel has
                            ;; started and compiled your application.
                            ;; Comment this out once it no longer serves you.
                            :open-urls ["http://localhost:3449/index.html"]}
 
-                :compiler {:main mpt-charts.example
+                :compiler {:main mpt-charts.efficient-frontier
                            :asset-path "js/compiled/out"
                            :output-to "resources/public/js/compiled/mpt_charts.js"
                            :output-dir "resources/public/js/compiled/out"
@@ -50,7 +50,7 @@
                {:id "min"
                 :source-paths ["src"]
                 :compiler {:output-to "resources/public/js/compiled/mpt_charts.js"
-                           :main mpt-charts.example
+                           :main mpt-charts.efficient-frontier
                            :optimizations :advanced
                            :externs ["externs/highcharts.js"]
                            :pretty-print false}}]}
