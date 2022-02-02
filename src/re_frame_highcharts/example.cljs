@@ -7,21 +7,20 @@
 
 ;; data helpers
 
-(defn historical-data-with-daily-returns [data]
+(defn historical-data-with-returns [data]
   (let [sorted-data (reverse (sort-by :date data))]
     (map-indexed (fn [i item]
                    (if (< i (- (count sorted-data) 1))
-                     (let [previous-day-item (nth sorted-data (+ i 1))
-                           daily-return (- (/ (:close item) (:close previous-day-item)) 1)]
-                       (assoc item :daily-return daily-return))
+                     (let [previous-close (:close (nth sorted-data (+ i 1)))
+                           return (- (/ (:close item) previous-close) 1)]
+                       (assoc item :return return))
                      item))
                  sorted-data)))
 
-(defn daily-returns [data]
-  (remove nil? (map :daily-return data)))
-
 (defn ticker-stats [data]
-  (let [returns (daily-returns (historical-data-with-daily-returns data))
+  (let [returns (->> (historical-data-with-returns data)
+                     (map :return)
+                     (remove nil?))
         mean (/ (apply + returns) (count returns))
         std-dev (stats/standard-deviation returns)]
     {:returns returns
@@ -30,8 +29,8 @@
 
 ;; portfolio
 
-(def spy-stats (ticker-stats data/spy1))
-(def vxus-stats (ticker-stats data/vxus1))
+(def spy-stats (ticker-stats data/spy))
+(def vxus-stats (ticker-stats data/vxus))
 
 (def portfolio-weights 
   [{:spy 100 :vxus 0}

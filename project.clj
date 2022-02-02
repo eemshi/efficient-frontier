@@ -10,7 +10,6 @@
                  [org.clojure/clojurescript "1.10.773"]
                  [reagent  "1.0.0"]
                  [re-frame "1.1.2"]
-                 [kixi/stats "0.5.4"]
 
                  ; Server side stuff
                  [ring "1.8.2"]
