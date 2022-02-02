@@ -43,17 +43,17 @@
 (def vxus-stats (ticker-stats data/vxus))
 
 (def portfolio-weights 
-  [{:spy 100 :vxus 0}
-   {:spy 90 :vxus 10}
-   {:spy 80 :vxus 20}
-   {:spy 70 :vxus 30}
-   {:spy 60 :vxus 40}
-   {:spy 50 :vxus 50}
-   {:spy 40 :vxus 60}
-   {:spy 30 :vxus 70}
-   {:spy 20 :vxus 80}
-   {:spy 10 :vxus 90}
-   {:spy 0 :vxus 100}])
+  [{:spy 1 :vxus 0}
+   {:spy .9 :vxus .1}
+   {:spy .8 :vxus .2}
+   {:spy .7 :vxus .3}
+   {:spy .6 :vxus .4}
+   {:spy .5 :vxus .5}
+   {:spy .4 :vxus .6}
+   {:spy .3 :vxus .7}
+   {:spy .2 :vxus .8}
+   {:spy .1 :vxus .9}
+   {:spy 0 :vxus 1}])
 
 (defn w-return [weight-x weight-y mean-x mean-y]
   (+ (* weight-x mean-x)
