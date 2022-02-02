@@ -24,7 +24,7 @@
 
 (defn standard-deviation-p [list]
   (let [mean (average list)
-        list-value-minus-mean-squared (map #(* (- % mean) (- % mean)) list)
+        list-value-minus-mean-squared (map #(pow (- % mean) 2) list)
         sum (apply + list-value-minus-mean-squared)
         variance (/ sum (count list))]
     (.sqrt js/Math variance)))
