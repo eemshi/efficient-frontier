@@ -3,8 +3,7 @@
             [reagent.dom]
             [re-frame.core :as rf]
             [data :as data]
-            [mpt-charts.utils :as chart-utils]
-            [mpt-charts.stats :as stats]))
+            [mpt-charts.utils :as chart-utils]))
 
 ;; math helpers
 
@@ -15,6 +14,27 @@
   (let [decimal-divisor (pow 10 digits)
         m (.toPrecision (js/Number (* (.abs js/Math num) decimal-divisor)) 15)]
     (* (/ (.round js/Math m) decimal-divisor) (.sign js/Math num))))
+
+;; statistics
+
+(def risk-free-rate 0) ;; omitted
+
+(defn average [nums]
+  (/ (apply + nums) (count nums)))
+
+(defn standard-deviation-p [list]
+  (let [mean (average list)
+        list-value-minus-mean-squared (map #(* (- % mean) (- % mean)) list)
+        sum (apply + list-value-minus-mean-squared)
+        variance (/ sum (count list))]
+    (.sqrt js/Math variance)))
+
+(defn covariance [list-x list-y]
+  (let [mean-x (average list-x)
+        mean-y (average list-y)]
+    (/ (->> (map (fn [x y] (* (- x mean-x) (- y mean-y))) list-x list-y)
+            (apply +))
+       (count list-x))))
 
 ;; shaping ticker data
 
@@ -33,7 +53,7 @@
                            (map :daily-return)
                            (remove nil?))
         mean (/ (apply + daily-returns) (count daily-returns))
-        stdev (stats/standard-deviation-p daily-returns)
+        stdev (standard-deviation-p daily-returns)
         annual-return (- (pow (+ 1 mean) 252) 1)
         annual-stdev (* stdev (.sqrt js/Math 252))]
     {:daily-returns daily-returns
@@ -68,7 +88,7 @@
   (.sqrt js/Math
          (+ (* (pow weight-x 2) (pow (:annual-stdev stats-x) 2))
             (* (pow weight-y 2) (pow (:annual-stdev stats-y) 2))
-            (* 2 weight-x weight-y (stats/covariance (:daily-returns stats-x) (:daily-returns stats-y))))))
+            (* 2 weight-x weight-y (covariance (:daily-returns stats-x) (:daily-returns stats-y))))))
 
 (def weighted-returns
   (map #(w-return (:spy %) (:vxus %) (:annual-return spy-stats) (:annual-return vxus-stats))
@@ -81,7 +101,7 @@
 (def weighted-sharpe-ratios
   (map (fn [w]
          (-> (w-return (:spy w) (:vxus w) (:annual-return spy-stats) (:annual-return vxus-stats))
-             (- stats/risk-free-rate)
+             (- risk-free-rate)
              (/ (w-stdev (:spy w) (:vxus w) spy-stats vxus-stats))))
        portfolio-weights))
 
@@ -92,11 +112,11 @@
 
 ;; TODO: make function for getting CAL points
 (def cal-series [{:x (* 0 0.1082)
-                  :y (+ (* 0 0.37672) (* (- 1 0) stats/risk-free-rate))}
+                  :y (+ (* 0 0.37672) (* (- 1 0) risk-free-rate))}
                  {:x (* 1 0.1082)
-                  :y (+ (* 1 0.37672) (* (- 1 1) stats/risk-free-rate))}
+                  :y (+ (* 1 0.37672) (* (- 1 1) risk-free-rate))}
                  {:x (* 2 0.1082)
-                  :y (+ (* 2 0.37672) (* (- 1 2) stats/risk-free-rate))}])
+                  :y (+ (* 2 0.37672) (* (- 1 2) risk-free-rate))}])
 
 ;; TODO: make function for getting axis min and max
 (def spline-config
@@ -217,6 +237,6 @@
           [:td td-style (round-decimal (:annual-stdev (ticker-stats data/spy1)) 5)]
           [:td td-style (round-decimal (:annual-stdev (ticker-stats data/vxus1)) 5)]]]]]
       [:div {:style {:margin-top "3em"}}
-       [:h3 (str "Covariance: " (round-decimal (stats/covariance (:daily-returns spy-stats) (:daily-returns vxus-stats)) 5))]
-       [:h3 (str "Risk Free Rate: " (round-decimal stats/risk-free-rate 5))]]]]]
+       [:h3 (str "Covariance: " (round-decimal (covariance (:daily-returns spy-stats) (:daily-returns vxus-stats)) 5))]
+       [:h3 (str "Risk Free Rate: " (round-decimal risk-free-rate 5))]]]]]
    (js/document.getElementById "app")))
