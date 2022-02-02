@@ -1,6 +1,6 @@
-(defproject re-frame-highcharts "0.1.5-SNAPSHOT"
-  :description "A simple utility helper to use Highcharts with re-frame"
-  :url "https://github.com/cfelde/re-frame-highcharts"
+(defproject mpt-charts "0.1.5-SNAPSHOT"
+  :description "Modern Portfolio Theory charts"
+  :url "https://github.com/eemshi/mpt-charts"
   :license {:name "Eclipse Public License"
             :url "http://www.eclipse.org/legal/epl-v10.html"}
 
@@ -29,16 +29,16 @@
                 ;; The presence of a :figwheel configuration here
                 ;; will cause figwheel to inject the figwheel client
                 ;; into your build
-                :figwheel {:on-jsload "re-frame-highcharts.example/on-js-reload"
+                :figwheel {:on-jsload "mpt-charts.example/on-js-reload"
                            ;; :open-urls will pop open your application
                            ;; in the default browser once Figwheel has
                            ;; started and compiled your application.
                            ;; Comment this out once it no longer serves you.
                            :open-urls ["http://localhost:3449/index.html"]}
 
-                :compiler {:main re-frame-highcharts.example
+                :compiler {:main mpt-charts.example
                            :asset-path "js/compiled/out"
-                           :output-to "resources/public/js/compiled/re_frame_highcharts.js"
+                           :output-to "resources/public/js/compiled/mpt_charts.js"
                            :output-dir "resources/public/js/compiled/out"
                            :source-map-timestamp true
                            ;; To console.log CLJS data-structures make sure you enable devtools in Chrome
@@ -49,13 +49,13 @@
                ;; lein cljsbuild once min
                {:id "min"
                 :source-paths ["src"]
-                :compiler {:output-to "resources/public/js/compiled/re_frame_highcharts.js"
-                           :main re-frame-highcharts.example
+                :compiler {:output-to "resources/public/js/compiled/mpt_charts.js"
+                           :main mpt-charts.example
                            :optimizations :advanced
                            :externs ["externs/highcharts.js"]
                            :pretty-print false}}]}
 
-  :ring {:handler re-frame-highcharts.ring/handler}
+  :ring {:handler mpt-charts.ring/handler}
 
   :figwheel {;; :http-server-root "public" ;; default and assumes "resources"
              ;; :server-port 3449 ;; default

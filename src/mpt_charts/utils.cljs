@@ -1,4 +1,4 @@
-(ns re-frame-highcharts.utils
+(ns mpt-charts.utils
   (:require [reagent.core :as reagent]
             [reagent.dom]))
 

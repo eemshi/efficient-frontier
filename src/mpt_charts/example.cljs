@@ -1,11 +1,11 @@
-(ns re-frame-highcharts.example
+(ns mpt-charts.example
   (:require [reagent.core :as reagent]
             [reagent.dom]
             [re-frame.core :as rf]
             [cljs.pprint :as pprint]
             [data :as data]
-            [re-frame-highcharts.utils :as chart-utils]
-            [re-frame-highcharts.stats :as stats]))
+            [mpt-charts.utils :as chart-utils]
+            [mpt-charts.stats :as stats]))
 
 ;; math helpers
 

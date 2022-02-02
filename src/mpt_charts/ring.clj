@@ -1,4 +1,4 @@
-(ns re-frame-highcharts.ring
+(ns mpt-charts.ring
   (:require [compojure.core :refer :all]
             [compojure.route :as route]
             [ring.middleware.reload :refer [wrap-reload]]

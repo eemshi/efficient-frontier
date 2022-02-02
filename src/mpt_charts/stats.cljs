@@ -1,4 +1,4 @@
-(ns re-frame-highcharts.stats)
+(ns mpt-charts.stats)
 
 (def risk-free-rate (/ .02 252))
 
