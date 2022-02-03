@@ -1,9 +1,7 @@
 # Modern Portfolio Theory Charts
 
 Built on [re-frame-highcharts](https://github.com/cfelde/re-frame-highcharts)
-## Running the example
-
-The example is prepared for figwheel, so just run
+## Running
 
     lein figwheel
 

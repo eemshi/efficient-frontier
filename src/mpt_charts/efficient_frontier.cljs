@@ -12,8 +12,9 @@
 
 (defn round-decimal [num digits]
   (let [decimal-divisor (pow 10 digits)
-        m (.toPrecision (js/Number (* (.abs js/Math num) decimal-divisor)) 15)]
-    (* (/ (.round js/Math m) decimal-divisor) (.sign js/Math num))))
+        m (.toPrecision (js/Number (* (.abs js/Math num) decimal-divisor)) 15)
+        rounded (* (/ (.round js/Math m) decimal-divisor) (.sign js/Math num))]
+    (.toFixed rounded digits)))
 
 ;; statistics
 
@@ -138,7 +139,7 @@
               :name "Portfolio"
               :data efficient-frontier-series}
              {:id "cal"
-              :name "CAL"
+              :name "Capital Allocation Line"
               :data cal-series}]
    :title   {:text "Efficient Frontier & CAL"}})
 
@@ -156,19 +157,21 @@
 ;; (swap! app-state update-in [:__figwheel_counter] inc)
 
 ;; janky styling
-(def td-style  {:style {:padding "0 1em"}})
-(def box-style {:style {:border "1px solid black"
+(def monospace {:font-family "Courier New"})
+(def td-style  {:style (merge monospace
+                              {:padding "0 1em"
+                               :text-align "right"})})
+(def box-style {:style {:border "1.5px solid black"
                         :padding "1em"
                         :margin "1em"}})
 
 (defn ^:export run
   []
-  (prn "CAL" cal-series)
   (reagent.dom/render
    [:div {:style {:font-family "Helvetica"}}
     [chart-1]
     [:div (assoc-in box-style [:style :display] "inline-block")
-     [:h1 "Portfolio Weights"]
+     [:h2 "Portfolio Weights"]
      [:div
       [:table
        [:thead
@@ -183,8 +186,8 @@
          (fn [w x y z]
            ^{:key (:spy w)}
            [:tr
-            [:td td-style (:spy w)]
-            [:td td-style (:vxus w)]
+            [:td td-style (round-decimal (:spy w) 1)]
+            [:td td-style (round-decimal (:vxus w) 1)]
             [:td td-style (round-decimal x 5)]
             [:td td-style (round-decimal y 5)]
             [:td td-style (round-decimal z 5)]])
@@ -194,7 +197,7 @@
          weighted-sharpe-ratios)]]]]
     [:div {:style {:display "flex"}}
      [:div box-style
-      [:h1 "1 Year Daily Returns"]
+      [:h2 "1 Year Daily Returns"]
       [:table
        [:thead
         [:tr
@@ -212,7 +215,7 @@
              (historical-data-with-daily-returns data/vxus))]]]
      [:div box-style
       [:div
-       [:h1 "1 Year Summary"]
+       [:h2 "1 Year Summary"]
        [:table
         [:thead
          [:tr
@@ -236,7 +239,13 @@
           [:td [:strong "Annualized St Dev"]]
           [:td td-style (round-decimal (:annual-stdev (ticker-stats data/spy)) 5)]
           [:td td-style (round-decimal (:annual-stdev (ticker-stats data/vxus)) 5)]]]]]
-      [:div {:style {:margin-top "3em"}}
-       [:h3 (str "Covariance: " (round-decimal (covariance (:daily-returns spy-stats) (:daily-returns vxus-stats)) 5))]
-       [:h3 (str "Risk Free Rate: " (round-decimal risk-free-rate 5))]]]]]
+      [:div {:style {:margin-top "2em"}}
+       [:p
+        [:strong "Covariance: "]
+        [:span {:style monospace} 
+         (round-decimal (covariance (:daily-returns spy-stats) (:daily-returns vxus-stats)) 5)]]
+       [:p
+        [:strong "Risk Free Rate: "]
+        [:span {:style monospace}
+         (round-decimal risk-free-rate 5)]]]]]]
    (js/document.getElementById "app")))
